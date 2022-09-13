@@ -3,17 +3,47 @@
 <style> /* set the CSS */
 
 .line {
-  fill: none;
-  stroke: steelblue;
-  stroke-width: 2px;
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 2px;
+}
+
+.healthyText {
+    font-size: 1.1em;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    fill: #219600;
+}
+
+.qText {
+    font-size: 1.1em;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    fill: #960000;
+}
+
+.axis {
+    font-size: 12px;
+}
+
+body {
+    text-align: center;
+    transform: translate(-40px, 0);
 }
 
 td, th {
     padding: 1px 4px;
 }
 
+h1 {
+    text-align: center;
+    padding-top: 20px;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    size: 0.8em;
+}
+
 </style>
 <body>
+
+<h1>Hypothesis: NO2 Levels would drop after quarentine in Denver, Colorado</h1>
 
 <!-- load the d3.js library -->    	
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -25,20 +55,11 @@ var margin = {top: 20, right: 20, bottom: 30, left: 50},
     height = 500 - margin.top - margin.bottom;
 
 // parse the Date / time
-var parseTime = d3.timeParse("%d/%b/%y");
+var parseTime = d3.timeParse("%m/%d/%Y");
 
 // set the ranges
-var x = d3.scaleTime()
-    .domain(d3.extent(data, function(d) { 
-        return d.Date;
-    }))
-    .range([0, width]);
+var x = d3.scaleTime().range([0, width]);
 var y = d3.scaleLinear().range([height, 0]);
-
-// define the line
-var valueline = d3.line()
-    .x(function(d) { return x(d.Date); })
-    .y(function(d) { return y(d.DailyMax); });
 
 // append the svg obgect to the body of the page
 // appends a 'group' element to 'svg'
@@ -48,76 +69,95 @@ var svg = d3.select("body")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
+    .attr("class", "lineGraph")
     .attr("transform",
           "translate(" + margin.left + "," + margin.top + ")");
 
 // Get the data
 d3.csv("data.csv").then(function(data) {
+    // Filters data for only Denver-Aroura-
+    data = data.filter(function(d,i) {return i<347});
 
-  // format the data
-  data.forEach(function(d) {
-      d.Date = parseTime(d.Date);
-      d.DailyMax = +d.DailyMax;
-  });
+    // format the data
+    data.forEach(function(d) {
+        d.date = parseTime(d.Date);
+        d.DailyMax = +d.DailyMax;
+    });
 
-  // Scale the range of the data
-  x.domain(d3.extent(data, function(d) { return d.Date; }));
-  y.domain([0, d3.max(data, function(d) { return d.DailyMax; })]);
+    // Scale the range of the data
+    x.domain(d3.extent(data, function(d) { return d.date; }));
+    y.domain([0, d3.max(data, function(d) { return d.DailyMax; })]);
 
-  // Add the valueline path.
-  svg.append("path")
-      .data([data])
-      .attr("class", "line")
-      .attr("d", valueline);
+    // Add the X Axis
+    svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .attr("class", "axis")
+        .call(d3.axisBottom(x));
 
-  // Add the X Axis
-  svg.append("g")
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x));
+    // Add the Y Axis
+    svg.append("g")
+        .attr("class", "axis")
+        .call(d3.axisLeft(y));
 
-  // Add the Y Axis
-  svg.append("g")
-      .call(d3.axisLeft(y));
+    // Adds horizontal line
+    svg.append("g")
+        .attr("transform", "translate(0, "+y(50)+")")
+        .append("line")
+        .attr("x2", width)
+        .style("stroke", "#219600")
+        .style("stroke-dasharray", ("3, 3"))
+        .style("stroke-width", "2px");
 
-// The table generation function
-function tabulate(data, columns) {
-    var table = d3.select("body").append("table")
-            .attr("style", "margin-left: 400px"),
-        thead = table.append("thead"),
-        tbody = table.append("tbody");
+    // Adds text to green line
+    svg.append("text")
+        .attr("y", 110)
+        .attr("x", width-550)
+        .attr("text-anchor", "middle")
+        .attr("class", "healthyText")
+        .text("Healthy level of NO2");
 
-    // append the header row
-    thead.append("tr")
-        .selectAll("th")
-        .data(columns)
-        .enter()
-        .append("th")
-            .text(function(column) { return column; });
+    var covidDate = new Date("2020-03-05")
+    // Add vertical line to signify Covid
+    svg.append("g")
+        .append("line")
+        .attr("x1", x(covidDate))
+        .attr("y1", 0)
+        .attr("x2", x(covidDate)) 
+        .attr("y2", height)
+        .style("stroke", "#960000")
+        .style("stroke-dasharray", ("3, 3"))
+        .style("stroke-width", "2px");
 
-    // create a row for each object in the data
-    var rows = tbody.selectAll("tr")
-        .data(data)
-        .enter()
-        .append("tr");
+    // Adds text to covid line
+    svg.append("text")
+        .attr("y", 135)
+        .attr("x", -15)
+        .attr("text-anchor", "end")
+        .attr("dy", ".75em")
+        .attr("transform", "rotate(-90)")
+        .attr("class", "qText")
+        .text("Quarentine");
 
-    // create a cell in each row for each column
-    var cells = rows.selectAll("td")
-        .data(function(row) {
-            return columns.map(function(column) {
-                return {column: column, value: row[column]};
-            });
-        })
-        .enter()
-        .append("td")
-        .attr("style", "font-family: Courier") // sets the font style
-            .html(function(d) { return d.value; });
-    
-    return table;
-}
+    // Add label to Y axis
+    svg.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", -50)
+        .attr("x", -140)
+        .attr("dy", ".75em")
+        .attr("transform", "rotate(-90)")
+        .text("NO2 in Atmosphere (ppb)");
 
-// render the table
- var peopleTable = tabulate(data, ["Date", "DailyMax"]);
-
+    // Add the line
+    svg.append("path")
+        .datum(data)
+        .attr("fill", "none")
+        .attr("stroke", "#0011fc")
+        .attr("stroke-width", 2)
+        .attr("d", d3.line()
+            .x(function(d) { return x(d.date) })
+            .y(function(d) { return y(d.DailyMax) })
+        );
 });
 
 </script>
