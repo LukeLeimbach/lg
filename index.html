@@ -25,7 +25,7 @@
         font-size: 12px;
     }
 
-    rect.bar {
+    .bar {
         fill: steelblue;
     }
 
@@ -179,73 +179,60 @@ d3.csv("data.csv").then(function(data) {
 
 
 
+
 // set the dimensions and margins of the graph
-var margin2 = {top: 10, right: 30, bottom: 30, left: 40},
+var margin2 = {top: 20, right: 20, bottom: 30, left: 40},
     width2 = 960 - margin2.left - margin2.right,
     height2 = 500 - margin2.top - margin2.bottom;
 
-// parse the date / time
-var parseDate = d3.timeParse("%d-%m-%Y");
-
 // set the ranges
-var x2 = d3.scaleTime()
-          .domain([new Date(2010, 6, 3), new Date(2012, 0, 1)])
-          .rangeRound([0, width2]);
+var x2 = d3.scaleBand()
+          .range([0, width2])
+          .padding(0.1);
 var y2 = d3.scaleLinear()
           .range([height2, 0]);
-
-// set the parameters for the histogram
-var histogram = d3.bin()
-    .value(function(d) { return d.date; })
-    .domain(x2.domain())
-    .thresholds(x2.ticks(d3.timeMonth));
-
+          
 // append the svg object to the body of the page
 // append a 'group' element to 'svg'
 // moves the 'group' element to the top left margin
-var svg2 = d3.select("#bar-graph")
+var svg2 = d3.select("body").append("svg")
     .attr("width", width2 + margin2.left + margin2.right)
     .attr("height", height2 + margin2.top + margin2.bottom)
-    .append("g")
+  .append("g")
     .attr("transform", 
           "translate(" + margin2.left + "," + margin2.top + ")");
 
 // get the data
-d3.csv("earthquakes.csv").then(function(data) {
-    // parse the Date / time
-    var parseTime = d3.timeParse("%m/%d/%Y");
+d3.csv("sales.csv").then(function(data) {
 
-    // format the data
-    data.forEach(function(d) {
-        d.date = parseDate(d.Date);
-    });
+  // format the data
+  data.forEach(function(d) {
+    d.sales = +d.sales;
+  });
 
-    // group the data for the bars
-    var bins = histogram(data);
+  // Scale the range of the data in the domains
+  x2.domain(data.map(function(d) { return d.salesperson; }));
+  y2.domain([0, d3.max(data, function(d) { return d.sales; })]);
 
-    // Scale the range of the data in the y domain
-    y2.domain([0, d3.max(bins, function(d) { return d.length; })]);
+  // append the rectangles for the bar chart
+  svg2.selectAll(".bar")
+      .data(data)
+    .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x2(d.salesperson); })
+      .attr("width", x2.bandwidth())
+      .attr("y", function(d) { return y2(d.sales); })
+      .attr("height", function(d) { return height2 - y2(d.sales); });
 
-    // append the bar rectangles to the svg element
-    svg.selectAll("rect")
-        .data(bins)
-        .enter().append("rect")
-        .attr("class", "bar")
-        .attr("x", 1)
-        .attr("transform", function(d) {
-            return "translate(" + x2(d.x0) + "," + y2(d.length) + ")"; })
-        .attr("width", function(d) { return x2(d.x1) - x2(d.x0) -1 ; })
-        .attr("height", function(d) { return height - y2(d.length); });
+  // add the x Axis
+  svg2.append("g")
+      .attr("transform", "translate(0," + height2 + ")")
+      .call(d3.axisBottom(x2));
 
-    // add the x Axis
-    svg2.append("g")
-        .attr("transform", "translate(0," + height2 + ")")
-        .call(d3.axisBottom(x2));
+  // add the y Axis
+  svg2.append("g")
+      .call(d3.axisLeft(y2));
 
-    // add the y Axis
-    svg2.append("g")
-        .call(d3.axisLeft(y2));
-      
 });
 
 </script>
