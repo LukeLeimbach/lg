@@ -1,49 +1,60 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<style> /* set the CSS */
 
-.line {
-    fill: none;
-    stroke: steelblue;
-    stroke-width: 2px;
-}
+<head>
+    <style> /* set the CSS */
+    .line {
+        fill: none;
+        stroke: rgb(90, 128, 235);
+        stroke-width: 2px;
+    }
 
-.healthyText {
-    font-size: 1.1em;
-    font-family: Georgia, 'Times New Roman', Times, serif;
-    fill: #219600;
-}
+    .healthyText {
+        font-size: 1.1em;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        fill: #219600;
+    }
 
-.qText {
-    font-size: 1.1em;
-    font-family: Georgia, 'Times New Roman', Times, serif;
-    fill: #960000;
-}
+    .qText {
+        font-size: 1.1em;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        fill: #960000;
+    }
 
-.axis {
-    font-size: 12px;
-}
+    .axis {
+        font-size: 12px;
+    }
 
-body {
-    text-align: center;
-    transform: translate(-40px, 0);
-}
+    rect.bar {
+        fill: steelblue;
+    }
 
-td, th {
-    padding: 1px 4px;
-}
+    body {
+        text-align: center;
+        transform: translate(-40px, 0);
+    }
 
-h1 {
-    text-align: center;
-    padding-top: 20px;
-    font-family: Georgia, 'Times New Roman', Times, serif;
-    size: 0.8em;
-}
+    td, th {
+        padding: 1px 4px;
+    }
 
-</style>
+    h1 {
+        text-align: center;
+        padding-top: 20px;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        size: 0.8em;
+    }
+
+    </style>
+</head>
+
 <body>
 
-<h1>Hypothesis: NO2 Levels would drop after quarentine in Denver, Colorado</h1>
+<h1>Hypothesis: NO2 Levels would drop after quarantine in Denver, Colorado</h1>
+
+<svg id="line-graph"></svg>
+<br><br>
+<svg id="bar-graph"></svg>
 
 <!-- load the d3.js library -->    	
 <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -64,8 +75,7 @@ var y = d3.scaleLinear().range([height, 0]);
 // append the svg obgect to the body of the page
 // appends a 'group' element to 'svg'
 // moves the 'group' element to the top left margin
-var svg = d3.select("body")
-    .append("svg")
+var svg = d3.select("#line-graph")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
@@ -136,7 +146,7 @@ d3.csv("data.csv").then(function(data) {
         .attr("dy", ".75em")
         .attr("transform", "rotate(-90)")
         .attr("class", "qText")
-        .text("Quarentine");
+        .text("Quarantine");
 
     // Add label to Y axis
     svg.append("text")
@@ -152,13 +162,92 @@ d3.csv("data.csv").then(function(data) {
     svg.append("path")
         .datum(data)
         .attr("fill", "none")
-        .attr("stroke", "#0011fc")
-        .attr("stroke-width", 2)
+        .attr("class", "line")
         .attr("d", d3.line()
             .x(function(d) { return x(d.date) })
             .y(function(d) { return y(d.DailyMax) })
         );
 });
 
+
+
+
+// ===========================================
+// BAR
+// GRAPH
+// ===========================================
+
+
+
+// set the dimensions and margins of the graph
+var margin2 = {top: 10, right: 30, bottom: 30, left: 40},
+    width2 = 960 - margin2.left - margin2.right,
+    height2 = 500 - margin2.top - margin2.bottom;
+
+// parse the date / time
+var parseDate = d3.timeParse("%d-%m-%Y");
+
+// set the ranges
+var x2 = d3.scaleTime()
+          .domain([new Date(2010, 6, 3), new Date(2012, 0, 1)])
+          .rangeRound([0, width2]);
+var y2 = d3.scaleLinear()
+          .range([height2, 0]);
+
+// set the parameters for the histogram
+var histogram = d3.bin()
+    .value(function(d) { return d.date; })
+    .domain(x2.domain())
+    .thresholds(x2.ticks(d3.timeMonth));
+
+// append the svg object to the body of the page
+// append a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+var svg2 = d3.select("#bar-graph")
+    .attr("width", width2 + margin2.left + margin2.right)
+    .attr("height", height2 + margin2.top + margin2.bottom)
+    .append("g")
+    .attr("transform", 
+          "translate(" + margin2.left + "," + margin2.top + ")");
+
+// get the data
+d3.csv("earthquakes.csv").then(function(data) {
+    // parse the Date / time
+    var parseTime = d3.timeParse("%m/%d/%Y");
+
+    // format the data
+    data.forEach(function(d) {
+        d.date = parseDate(d.Date);
+    });
+
+    // group the data for the bars
+    var bins = histogram(data);
+
+    // Scale the range of the data in the y domain
+    y2.domain([0, d3.max(bins, function(d) { return d.length; })]);
+
+    // append the bar rectangles to the svg element
+    svg.selectAll("rect")
+        .data(bins)
+        .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", 1)
+        .attr("transform", function(d) {
+            return "translate(" + x2(d.x0) + "," + y2(d.length) + ")"; })
+        .attr("width", function(d) { return x2(d.x1) - x2(d.x0) -1 ; })
+        .attr("height", function(d) { return height - y2(d.length); });
+
+    // add the x Axis
+    svg2.append("g")
+        .attr("transform", "translate(0," + height2 + ")")
+        .call(d3.axisBottom(x2));
+
+    // add the y Axis
+    svg2.append("g")
+        .call(d3.axisLeft(y2));
+      
+});
+
 </script>
+
 </body>
