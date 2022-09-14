@@ -22,16 +22,16 @@
     }
 
     .axis {
-        font-size: 12px;
+        font-size: 14px;
     }
 
     .bar {
         fill: steelblue;
+        padding-left: 2em;
     }
 
     body {
-        text-align: center;
-        transform: translate(-40px, 0);
+        text-align: left;
     }
 
     td, th {
@@ -61,7 +61,7 @@
 <script>
 
 // set the dimensions and margins of the graph
-var margin = {top: 20, right: 20, bottom: 30, left: 50},
+var margin = {top: 20, right: 20, bottom: 30, left: 100},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
@@ -140,7 +140,7 @@ d3.csv("data.csv").then(function(data) {
 
     // Adds text to covid line
     svg.append("text")
-        .attr("y", 135)
+        .attr("y", 128)
         .attr("x", -15)
         .attr("text-anchor", "end")
         .attr("dy", ".75em")
@@ -152,11 +152,12 @@ d3.csv("data.csv").then(function(data) {
     svg.append("text")
         .attr("class", "y label")
         .attr("text-anchor", "end")
-        .attr("y", -50)
-        .attr("x", -140)
+        .attr("y", -52)
+        .attr("x", -120)
         .attr("dy", ".75em")
         .attr("transform", "rotate(-90)")
-        .text("NO2 in Atmosphere (ppb)");
+        .style("font-size", "1.3em")
+        .text("Max NO2 in Atmosphere (ppb)");
 
     // Add the line
     svg.append("path")
@@ -181,16 +182,16 @@ d3.csv("data.csv").then(function(data) {
 
 
 // set the dimensions and margins of the graph
-var margin2 = {top: 20, right: 20, bottom: 30, left: 40},
-    width2 = 960 - margin2.left - margin2.right,
+var margin2 = {top: 20, right: 20, bottom: 30, left: 60},
+    width2 = 600 - margin2.left - margin2.right,
     height2 = 500 - margin2.top - margin2.bottom;
 
 // set the ranges
 var x2 = d3.scaleBand()
-          .range([0, width2])
-          .padding(0.1);
+    .range([0, width2])
+    .padding(0.1);
 var y2 = d3.scaleLinear()
-          .range([height2, 0]);
+    .range([height2, 0]);
           
 // append the svg object to the body of the page
 // append a 'group' element to 'svg'
@@ -202,36 +203,60 @@ var svg2 = d3.select("body").append("svg")
     .attr("transform", 
           "translate(" + margin2.left + "," + margin2.top + ")");
 
+var parseMonth = d3.timeParse("%d");
+
 // get the data
-d3.csv("data.csv").then(function(data) {
+d3.csv("data2.csv").then(function(data) {
 
-  // format the data
-  data.forEach(function(d) {
-    d.DailyMax = +d.DailyMax;
-  });
+    // format the data
+    data.forEach(function(d) {
+        d.high = +d.high;
+        d.month = +d.month
+    });
 
-  // Scale the range of the data in the domains
-  x2.domain(data.map(function(d) { return d.date; }));
-  y2.domain([0, d3.max(data, function(d) { return d.DailyMax; })]);
+    // Scale the range of the data in the domains
+    x2.domain(["Before Quarantine", "After Quarantine"])// data.map(function(d) { return parseMonth(d.date); })
+        
+    y2.domain([0, d3.max(data, function(d) { return d.high; })]);
 
-  // append the rectangles for the bar chart
-  svg2.selectAll(".bar")
-      .data(data)
-    .enter().append("rect")
-      .attr("class", "bar")
-      .attr("x", function(d) { return x2(d.date); })
-      .attr("width", x2.bandwidth())
-      .attr("y", function(d) { return y2(d.DailyMax); })
-      .attr("height", function(d) { return height2 - y2(d.DailyMax); });
+    // append the rectangles for the bar chart
+    svg2.selectAll(".bar")
+        .data(data)
+        .join("rect")
+        .attr("class", "bar")
+        .attr("x", 85+"px" )
+        .attr("width", 100+"px")
+        .attr("y", function(d) { return y2(d.high); })
+        .attr("height", function(d) { return height2 - y2(d.high); });
 
-  // add the x Axis
-  svg2.append("g")
-      .attr("transform", "translate(0," + height2 + ")")
-      .call(d3.axisBottom(x2));
+    // God forgive me
+    svg2.append("rect")
+        .attr("x", 335+"px")
+        .attr("y", 50)
+        .attr("width", 100+"px")
+        .attr("class", "bar")
+        .attr("height", 400)
 
-  // add the y Axis
-  svg2.append("g")
-      .call(d3.axisLeft(y2));
+    // add the x Axis
+    svg2.append("g")
+        .attr("transform", "translate(0," + height2 + ")")
+        .attr("class", "axis")
+        .call(d3.axisBottom(x2));
+
+    // add the y Axis
+    svg2.append("g")
+        .call(d3.axisLeft(y2));
+
+    // Add label to Y axis
+    svg2.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", -52)
+        .attr("x", -120)
+        .attr("dy", ".75em")
+        .attr("transform", "rotate(-90)")
+        .style("font-size", "1.3em")
+        .text("Max NO2 in Atmosphere (ppb)");
 
 });
 
