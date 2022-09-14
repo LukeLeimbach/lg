@@ -205,90 +205,33 @@ var svg2 = d3.select("body").append("svg")
 // get the data
 d3.csv("data.csv").then(function(data) {
 
-    // Filters data for only Denver-Aroura-
-    data = data.filter(function(d,i) {return i<347});
+  // format the data
+  data.forEach(function(d) {
+    d.DailyMax = +d.DailyMax;
+  });
 
-    var parseMonth = d3.timeParse("%b");
+  // Scale the range of the data in the domains
+  x2.domain(data.map(function(d) { return d.date; }));
+  y2.domain([0, d3.max(data, function(d) { return d.DailyMax; })]);
 
-    d.janTotal = 0;
-    d.febTotal = 0;
-    d.marTotal = 0;
-    d.aprTotal = 0;
-    d.mayTotal = 0;
-    d.junTotal = 0;
-    d.julTotal = 0;
-    d.augTotal = 0;
-    d.sepTotal = 0;
-    d.octTotal = 0;
-    d.novTotal = 0;
-    d.decTotal = 0;
+  // append the rectangles for the bar chart
+  svg2.selectAll(".bar")
+      .data(data)
+    .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x2(d.date); })
+      .attr("width", x2.bandwidth())
+      .attr("y", function(d) { return y2(d.DailyMax); })
+      .attr("height", function(d) { return height2 - y2(d.DailyMax); });
 
-    // format the data
-    data.forEach(function(d) {
-        d.date = parseMonth(d.Date);
-        // if (d.date.getMonth() == 0) {
-        //     d.janTotal += 1;
-        // }
-        // if (d.date.getMonth() == 1) {
-        //     d.febTotal += 1;
-        // }
-        // if (d.date.getMonth() == 2) {
-        //     d.marTotal += 1;
-        // }
-        // if (d.date.getMonth() == 3) {
-        //     d.aprTotal += 1;
-        // }
-        // if (d.date.getMonth() == 4) {
-        //     d.mayTotal += 1;
-        // }
-        // if (d.date.getMonth() == 5) {
-        //     d.junTotal += 1;
-        // }
-        // if (d.date.getMonth() == 6) {
-        //     d.julTotal += 1;
-        // }
-        // if (d.date.getMonth() == 7) {
-        //     d.augTotal += 1;
-        // }
-        // if (d.date.getMonth() == 8) {
-        //     d.sepTotal += 1;
-        // }
-        // if (d.date.getMonth() == 9) {
-        //     d.octTotal += 1;
-        // }
-        // if (d.date.getMonth() == 10) {
-        //     d.novTotal += 1;
-        // }
-        // if (d.date.getMonth() == 11) {
-        //     d.decTotal += 1;
-        // }
-        d.mMax = +d.mMax;
-    });
+  // add the x Axis
+  svg2.append("g")
+      .attr("transform", "translate(0," + height2 + ")")
+      .call(d3.axisBottom(x2));
 
-    // Scale the range of the data in the domains
-    x2.domain(data.map(function(d) { return d.date; }));
-    y2.domain([0, d3.max(data, function(d) { return d.mMax; })]);
-
-    // append the rectangles for the bar chart
-    svg2.selectAll(".bar")
-        .data(data)
-        .enter().append("rect")
-        .attr("class", "bar")
-        .attr("x", function(d) { return x2(d.date); })
-        .attr("width", x2.bandwidth())
-        .attr("y", function(d) { return y2(d.mMax); })
-        .attr("height", function(d) { return height2 - y2(d.sales); });
-
-    // add the x Axis
-    svg2.append("g")
-        .attr("transform", "translate(0," + height2 + ")")
-        .attr("class", "axis")
-        .call(d3.axisBottom(x2));
-
-    // add the y Axis
-    svg2.append("g")
-        .attr("class", "axis")
-        .call(d3.axisLeft(y2));
+  // add the y Axis
+  svg2.append("g")
+      .call(d3.axisLeft(y2));
 
 });
 
