@@ -2,6 +2,14 @@
 <meta charset="utf-8">
 
 <head>
+    <!-- load the d3.js library -->    	
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <!-- load the vega library -->    	
+    <script src="https://cdn.jsdelivr.net/npm/vega@5.22.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.5.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.21.0"></script>
+    
     <style> /* set the CSS */
     .line {
         fill: none;
@@ -25,24 +33,45 @@
         font-size: 14px;
     }
 
-    .bar {
-        fill: steelblue;
-        padding-left: 2em;
+    .container {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        margin: auto;
+        text-align: left;
+    }
+
+    .container > svg {
+        background-color: white;
+        padding: 20px;
+        align-self: center;
+    }
+
+    .container > div {
+        background-color: white;
+        padding: 20px;
+        align-self: center;
+    }
+
+    .container > h3 {
+        background-color: white;
+        padding: 20px;
+        align-self: inherit;
     }
 
     body {
-        text-align: left;
+        background-color: lightsteelblue;
     }
 
     td, th {
         padding: 1px 4px;
     }
 
-    h1 {
+    h1, h2, h3 {
         text-align: center;
         padding-top: 20px;
-        font-family: Georgia, 'Times New Roman', Times, serif;
-        size: 0.8em;
+        font-family: Georgia, 'Times New Roman', Times;
+        size: 1em;
     }
 
     </style>
@@ -52,16 +81,21 @@
 
 <h1>Hypothesis: NO2 Levels would drop after quarantine in Denver, Colorado</h1>
 
-<svg id="line-graph"></svg>
-<br><br>
-<svg id="bar-graph"></svg>
+<div class="container">
+    <h2 style="margin-top: 40px; background-color: white; margin-bottom: 0px; width: 1000px; text-align: center; padding-top: 10px;">Daily highs in NO2 in the Denver area in 2020</h2>
+    <svg id="line-graph"></svg>
+    <div id="vis" style="margin-top: 20px"></div>
+    <h3 style="text-align: left;">Conclusion: The data supports the hypothesis that NO2 levels dropped after quarantine started <br>
+                                 in Colorado on March 5, 2020. The daily and monthly highs decrease after March then slowly <br>
+                                 start climbing back to normal.</h3>
+    <h3 style="text-align: left">Source: https://www.epa.gov/outdoor-air-quality-data/download-daily-data</h3>
+</div>
 
-<!-- load the d3.js library -->    	
-<script src="https://d3js.org/d3.v7.min.js"></script>
+
 <script>
 
 // set the dimensions and margins of the graph
-var margin = {top: 20, right: 20, bottom: 30, left: 100},
+var margin = {top: 0, right: 20, bottom: 20, left: 55},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
@@ -170,96 +204,37 @@ d3.csv("data.csv").then(function(data) {
         );
 });
 
-
-
-
-// ===========================================
-// BAR
-// GRAPH
-// ===========================================
-
-
-
-
-// set the dimensions and margins of the graph
-var margin2 = {top: 20, right: 20, bottom: 30, left: 60},
-    width2 = 600 - margin2.left - margin2.right,
-    height2 = 500 - margin2.top - margin2.bottom;
-
-// set the ranges
-var x2 = d3.scaleBand()
-    .range([0, width2])
-    .padding(0.1);
-var y2 = d3.scaleLinear()
-    .range([height2, 0]);
-          
-// append the svg object to the body of the page
-// append a 'group' element to 'svg'
-// moves the 'group' element to the top left margin
-var svg2 = d3.select("body").append("svg")
-    .attr("width", width2 + margin2.left + margin2.right)
-    .attr("height", height2 + margin2.top + margin2.bottom)
-  .append("g")
-    .attr("transform", 
-          "translate(" + margin2.left + "," + margin2.top + ")");
-
-var parseMonth = d3.timeParse("%d");
-
-// get the data
-d3.csv("data2.csv").then(function(data) {
-
-    // format the data
-    data.forEach(function(d) {
-        d.high = +d.high;
-        d.month = +d.month
-    });
-
-    // Scale the range of the data in the domains
-    x2.domain(["Before Quarantine", "After Quarantine"])// data.map(function(d) { return parseMonth(d.date); })
-        
-    y2.domain([0, d3.max(data, function(d) { return d.high; })]);
-
-    // append the rectangles for the bar chart
-    svg2.selectAll(".bar")
-        .data(data)
-        .join("rect")
-        .attr("class", "bar")
-        .attr("x", 85+"px" )
-        .attr("width", 100+"px")
-        .attr("y", function(d) { return y2(d.high); })
-        .attr("height", function(d) { return height2 - y2(d.high); });
-
-    // God forgive me
-    svg2.append("rect")
-        .attr("x", 335+"px")
-        .attr("y", 50)
-        .attr("width", 100+"px")
-        .attr("class", "bar")
-        .attr("height", 400)
-
-    // add the x Axis
-    svg2.append("g")
-        .attr("transform", "translate(0," + height2 + ")")
-        .attr("class", "axis")
-        .call(d3.axisBottom(x2));
-
-    // add the y Axis
-    svg2.append("g")
-        .call(d3.axisLeft(y2));
-
-    // Add label to Y axis
-    svg2.append("text")
-        .attr("class", "y label")
-        .attr("text-anchor", "end")
-        .attr("y", -52)
-        .attr("x", -120)
-        .attr("dy", ".75em")
-        .attr("transform", "rotate(-90)")
-        .style("font-size", "1.3em")
-        .text("Max NO2 in Atmosphere (ppb)");
-
-});
-
 </script>
+
+<!-- Bar Graph -->
+
+<script type="text/javascript">
+    var barGraph = {
+        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+        width: 885,
+        height: 400,
+        sorting: "ascending",
+        title: {
+            text: "Monthly highs in NO2 in the Denver area in 2020",
+            fontSize: 20},
+        description: 'Bar Graph ',
+        data: {url: "data2.csv"},
+        config: {
+            axis: {
+                labelFontSize: 15,
+                titleFontSize: 20
+            }
+        },
+        mark: {type: "bar"},
+        encoding: {
+            x: {field: "month", 
+                sort: "null",
+                title: "Month in 2020",},
+            y: {field: "high", type: "quantitative", title: "Max NO2 in Atmosphere (ppb)"}
+        }
+    };
+    vegaEmbed('#vis', barGraph);
+</script>
+
 
 </body>
